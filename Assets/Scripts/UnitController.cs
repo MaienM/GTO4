@@ -1,24 +1,33 @@
 ﻿using UnityEngine;
 using System.Collections;
 
+/// <summary>
+/// An unit that can move around, attack and harvest things.
+/// </summary>
 public class UnitController : Interactable
 {
-    // The player this unit belongs to.
+    /// <summary>
+    /// The player this unit belongs to.
+    /// </summary>
     public PlayerController player;
 
-    // How fast this uset can gather resources.
+    /// <summary>
+    /// How fast this uset can gather resources.
+    /// </summary>
     public Resources gathering = new Resources();
 
-    // How much damage this unit can do.
+    /// <summary>
+    /// How much damage this unit can do.
+    /// </summary>
     public float damage = 0;
 
-    // The object the user is currently interacting with.
+    /// <summary>
+    /// The object the user is currently interacting with.
+    /// </summary>
     public Interactable interactingWith;
 	
-	new public void Update() 
+	public void OnTurnEnd() 
 	{
-        base.Update();
-
         // Interact.
         if (interactingWith != null)
         {

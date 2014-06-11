@@ -4,54 +4,77 @@ using System.Collections.Generic;
 
 public class LevelBuilder : MonoBehaviour 
 {
-    public int size = 10;
+    /// <summary>
+    /// The radius of the level. 
+    /// 
+    /// The total level size will be 2 * radius + 1 by 2 * radius + 1.
+    /// </summary>
+    public int radius = 10;
+
+    /// <summary>
+    /// The prefab used for the floor of the level.
+    /// </summary>
     public GameObject floorPrefab;
-    public List<GameObject> objectPrefabs;
+
+    /// <summary>
+    /// The grid of the level.
+    /// </summary>
     public GameObject[,] grid;
+
+    /// <summary>
+    /// One step in the x direction.
+    /// </summary>
+    private Vector3 stepX;
+
+    /// <summary>
+    /// One step in the z direction.
+    /// </summary>
+    private Vector3 stepZ;
 
 	public void Start() 
 	{
         // Create vectors to take one step in either direction.
         Vector3 step = floorPrefab.transform.localScale * 10;
-        step.y = 0;
-        Vector3 stepx = new Vector3(step.x, 0, 0);
-        Vector3 stepz = new Vector3(0, 0, step.z);
+        stepX = new Vector3(step.x, 0, 0);
+        stepZ = new Vector3(0, 0, step.z);
 
         // Create the floors
-        Instantiate(floorPrefab, Vector3.zero);
-        for (int i = 0; i < size; i++)
+        CreateFloor(Vector3.zero);
+        for (int i = 0; i < radius; i++)
         {
-            for (int j = 0; j < size + 1; j++)
+            for (int j = 0; j < radius + 1; j++)
             {
-                Instantiate(floorPrefab, stepx * (i + 1) - stepz * j);
-                Instantiate(floorPrefab, -stepx * (i + 1) + stepz * j);
-                Instantiate(floorPrefab, stepz * (i + 1) + stepx * j);
-                Instantiate(floorPrefab, -stepz * (i + 1) - stepx * j);
+                CreateFloor(stepX * (i + 1) - stepZ * j);
+                CreateFloor(-stepX * (i + 1) + stepZ * j);
+                CreateFloor(stepZ * (i + 1) + stepX * j);
+                CreateFloor(-stepZ * (i + 1) - stepX * j);
             }
         }
 
-        // Create the other objects.
-        grid = new GameObject[size * 2 + 1, size * 2 + 1];
-        foreach (GameObject prefab in objectPrefabs)
-        {
-            for (int i = 0; i < size; i++)
-            {
-                int x, z;
-                do
-                {
-                    x = Random.Range(0, size * 2 + 1);
-                    z = Random.Range(0, size * 2 + 1);
-                }
-                while (grid[x, z] != null);
-                grid[x, z] = Instantiate(prefab, (x - size) * stepx + (z - size) * stepz);
-            }
-        }
+        // Create the grid.
+        grid = new GameObject[radius * 2 + 1, radius * 2 + 1];
 	}
 
-    new public GameObject Instantiate(GameObject prefab, Vector3 position)
+    /// <summary>
+    /// Create a new floor tile at the given position.
+    /// </summary>
+    /// <param name="position">The position at which to create the floor tile</param>
+    /// <returns>The new floor tile</returns>
+    private GameObject CreateFloor(Vector3 position)
     {
-        GameObject go = Instantiate(prefab, position, Quaternion.identity) as GameObject;
+        GameObject go = Instantiate(floorPrefab, position, Quaternion.identity) as GameObject;
         go.transform.parent = gameObject.transform;
         return go;
+    }
+
+    /// <summary>
+    /// Get the position of a grid tile.
+    /// </summary>
+    /// <param name="x">The x index of the tile</param>
+    /// <param name="z">The z index of the tile</param>
+    /// <returns>The position of this tile in the world</returns>
+    public Vector3 GetGridPosition(int x, int z)
+    {
+        return (x - radius - 1) * stepX + (z - radius - 1) * stepZ;
     }
 }
