@@ -1,0 +1,3 @@
+[submodule "Assets/Plugins/console"]
+	path = Assets/Plugins/console
+	url = https://github.com/Bonemind/unity3d-console
