@@ -1,8 +1,20 @@
-﻿using UnityEngine;
+﻿using System;
 using System.Collections;
+using System.Linq;
+using UnityEngine;
 
 public class HUD : MonoBehaviour 
 {
+    /// <summary>
+    /// The game controller game object.
+    /// </summary>
+    public GameObject controller;
+
+    /// <summary>
+    /// The game controller.
+    /// </summary>
+    private GameController gc;
+
     /// <summary>
     /// The player this HUD belongs to.
     /// </summary>
@@ -13,24 +25,32 @@ public class HUD : MonoBehaviour
     /// </summary>
     private PlayerController pc;
 
-    public void Setup()
+    public void Start()
     {
-        // Get the player controller.
+        gc = controller.GetComponent<GameController>();
         pc = player.GetComponent<PlayerController>();
     }
 
     public void OnGUI()
     {
-        GUILayout.BeginArea(new Rect(0, 0, Screen.width, Screen.height));
+        GUILayout.BeginArea(new Rect(0, 0, Screen.width * 0.1f, Screen.height));
         {
             GUILayout.BeginVertical();
             {
-                GUILayout.FlexibleSpace();
-                GUILayout.BeginHorizontal();
+                // Resources.
+                GUILayout.Label("WOOD: " + pc.resources.WOOD);
+                GUILayout.Label("STONE: " + pc.resources.STONE);
+                GUILayout.Label("IRON: " + pc.resources.IRON);
+
+                // Spawn units.
+
+
+                if (GUILayout.Button("End round"))
                 {
-                    //GUILayout.Label(pc.resources[ResourceType.IRON].ToString());
+                    gc.EndRound();
                 }
-                GUILayout.EndHorizontal();
+
+                GUILayout.FlexibleSpace();
             }
             GUILayout.EndVertical();
         }
