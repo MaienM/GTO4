@@ -42,10 +42,27 @@ public class LevelBuilder : MonoBehaviour
                 Vector3 position = x * stepX + z * stepZ;
                 GameObject go = Instantiate(floorPrefab, position, Quaternion.identity) as GameObject;
                 go.transform.parent = gameObject.transform;
-                Tile tile = go.AddComponent<Tile>();
+                Tile tile = go.GetComponent<Tile>();
                 tile.X = x;
                 tile.Z = z;
                 grid[x, z] = tile;
+            }
+        }
+
+        // Introduce the tiles to their neighbours.
+        for (int x = 0; x < size; x++)
+        {
+            for (int z = 0; z < size; z++)
+            {
+                Tile tile = grid[x, z];
+                if (x > 0)
+                    tile.Neighbours.Add(grid[x - 1, z]);
+                if (x < size - 1)
+                    tile.Neighbours.Add(grid[x + 1, z]);
+                if (z > 0)
+                    tile.Neighbours.Add(grid[x, z - 1]);
+                if (z < size - 1)
+                    tile.Neighbours.Add(grid[x, z + 1]);
             }
         }
 
@@ -59,7 +76,7 @@ public class LevelBuilder : MonoBehaviour
                 x = Random.Range(0, size);
                 z = Random.Range(0, size);
             } while (grid[x, z].Occupant != null);
-            grid[x, z].Occupant = go;
+            grid[x, z].Occupant = go.GetComponent<Unit>();
             go.transform.position = grid[x, z].gameObject.transform.position;
         }
 	}

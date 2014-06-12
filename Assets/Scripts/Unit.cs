@@ -1,30 +1,11 @@
 ﻿using UnityEngine;
 using System.Collections;
-
-public class ColorData
-{
-    /// <summary>
-    /// The color.
-    /// </summary>
-    public Color color;
-
-    /// <summary>
-    /// The color intensity. 
-    /// Range of 0.0 - 1.0.
-    /// </summary>
-    public float intensity;
-
-    public ColorData(Color color, float intensity)
-    {
-        this.color = color;
-        this.intensity = intensity;
-    }
-}
+using System.Collections.Generic;
 
 /// <summary>
 /// An object with which can be interacted.
 /// </summary>
-public class Unit : MonoBehaviour
+public class Unit : Colorable
 {
     /// <summary>
     /// The player this unit belongs to.
@@ -47,9 +28,9 @@ public class Unit : MonoBehaviour
     public float damage = 0;
 
     /// <summary>
-    /// Whether the unit is static.
+    /// The range of this unit. 0 means the unit cannot move.
     /// </summary>
-    public bool isStatic = true;
+    public int range = 0;
 
     /// <summary>
     /// The tile on which this unit is located.
@@ -57,21 +38,10 @@ public class Unit : MonoBehaviour
     public Tile tile;
 
     /// <summary>
-    /// The base color.
-    /// </summary>
-    private Color baseColor;
-
-    /// <summary>
     /// Whether the turn is completed.
     /// </summary>
     public bool turnDone = false;
-
-    public void Start()
-    {
-        // Store the base color.
-        baseColor = renderer.material.color;
-    }
-
+    
     /// <summary>
     /// Move to the given tile
     /// </summary>
@@ -79,6 +49,14 @@ public class Unit : MonoBehaviour
     /// <returns>Whether the move succeeded</returns>
     public bool MoveTo(Tile tile)
     {
+        // Check whether the tile is in range.
+        List<Tile> path = Tile.Pathfind(this.tile, tile, range);
+        if (path == null)
+        {
+            return false;
+        }
+
+        // Move.
         this.tile = tile;
 
         // End turn.
@@ -122,7 +100,7 @@ public class Unit : MonoBehaviour
     private void EndTurn()
     {
         turnDone = true;
-        SendMessage("SetColor", new ColorData(Color.white, 0.6f));
+        SendMessage("AddColor", new ColorData("disable", Color.white, 0.6f, 10));
     }
 
     /// <summary>
@@ -131,24 +109,7 @@ public class Unit : MonoBehaviour
     public void OnRoundStart()
     {
         turnDone = false;
-        SendMessage("ResetColor");
-    }
-
-    /// <summary>
-    /// Set the color.
-    /// </summary>
-    /// <param name="colorData">The color to set it to</param>
-    public void SetColor(ColorData colorData)
-    {
-        renderer.material.color = baseColor * (1 - colorData.intensity) + colorData.color * colorData.intensity;
-    }
-
-    /// <summary>
-    /// Reset the color to the default for this object.
-    /// </summary>
-    public void ResetColor()
-    {
-        renderer.material.color = baseColor;
+        SendMessage("RemoveColor", "disable");
     }
 
     /// <summary>

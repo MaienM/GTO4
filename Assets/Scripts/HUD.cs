@@ -6,29 +6,24 @@ using UnityEngine;
 public class HUD : MonoBehaviour 
 {
     /// <summary>
-    /// The game controller game object.
-    /// </summary>
-    public GameObject controller;
-
-    /// <summary>
     /// The game controller.
     /// </summary>
     private GameController gc;
-
-    /// <summary>
-    /// The player this HUD belongs to.
-    /// </summary>
-    public GameObject player;
 
     /// <summary>
     /// The player controller.
     /// </summary>
     private PlayerController pc;
 
+    /// <summary>
+    /// The texture of the minimap.
+    /// </summary>
+    public RenderTexture minimapTexture;
+
     public void Start()
     {
-        gc = controller.GetComponent<GameController>();
-        pc = player.GetComponent<PlayerController>();
+        gc = GameObject.FindGameObjectWithTag("GameController").GetComponent<GameController>();
+        pc = GameObject.FindGameObjectWithTag("Player").GetComponent<PlayerController>();
     }
 
     public void OnGUI()
@@ -43,7 +38,7 @@ public class HUD : MonoBehaviour
                 GUILayout.Label("IRON: " + pc.resources.IRON);
 
                 // Spawn units.
-
+                //GUILayout
 
                 if (GUILayout.Button("End round"))
                 {
@@ -55,5 +50,7 @@ public class HUD : MonoBehaviour
             GUILayout.EndVertical();
         }
         GUILayout.EndArea();
+
+        GUI.DrawTexture(new Rect(Screen.width * 0.85f, Screen.height * 0.85f, Screen.width * 0.95f, Screen.height * 0.95f), minimapTexture);
     }
 }
