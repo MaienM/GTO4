@@ -18,19 +18,7 @@ public class Tile : Colorable
     /// <summary>
     /// The object currently occupying this tile.
     /// </summary>
-    public Unit Occupant
-    {
-        get
-        {
-            return _occupant;
-        }
-        set
-        {
-            _occupant = value;
-            value.tile = this;
-        }
-    }
-    private Unit _occupant;
+    public Unit Occupant;
 
     /// <summary>
     /// The neighbours of this tile.
@@ -138,16 +126,16 @@ public class Tile : Colorable
     {
         if (range == 1)
         {
-            return tile.Neighbours.Where(t => t.Occupant == null);
+            return tile.Neighbours;
         }
         else
         {
             List<Tile> tiles = new List<Tile>();
             foreach (Tile neighbour in tile.Neighbours)
             {
+                tiles.Add(neighbour);
                 if (neighbour.Occupant == null)
                 {
-                    tiles.Add(neighbour);
                     foreach (Tile t in Tile.Neighbourhood(neighbour, range - 1))
                     {
                         tiles.Add(t);

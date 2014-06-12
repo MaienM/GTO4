@@ -76,7 +76,7 @@ public class LevelBuilder : MonoBehaviour
                 x = Random.Range(0, size);
                 z = Random.Range(0, size);
             } while (grid[x, z].Occupant != null);
-            grid[x, z].Occupant = go.GetComponent<Unit>();
+            go.GetComponent<Unit>().tile = grid[x, z];
             go.transform.position = grid[x, z].gameObject.transform.position;
         }
 	}

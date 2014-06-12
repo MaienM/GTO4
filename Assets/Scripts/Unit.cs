@@ -35,7 +35,26 @@ public class Unit : Colorable
     /// <summary>
     /// The tile on which this unit is located.
     /// </summary>
-    public Tile tile;
+    public Tile tile
+    {
+        get
+        {
+            return _tile;
+        }
+        set
+        {
+            if (_tile != null)
+            {
+                _tile.Occupant = null;
+            }
+            _tile = value;
+            if (_tile != null)
+            {
+                _tile.Occupant = this;
+            }
+        }
+    }
+    private Tile _tile;
 
     /// <summary>
     /// Whether the turn is completed.
@@ -58,6 +77,7 @@ public class Unit : Colorable
 
         // Move.
         this.tile = tile;
+        this.transform.position = tile.transform.position;
 
         // End turn.
         EndTurn();

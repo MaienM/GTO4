@@ -13,24 +13,12 @@ public class GameController : MonoBehaviour
     /// </summary>
     public void EndRound(params string[] args)
     {
-        BroadcastMessageAll("OnRoundEnd");
+        Utils.BroadcastMessageAll("OnRoundEnd");
         StartRound();
     }
 
     public void StartRound()
     {
-        BroadcastMessageAll("OnRoundStart");
-    }
-
-    /// <summary>
-    /// Broadcast a message to all game objects in the scene.
-    /// </summary>
-    /// <param name="message"></param>
-    private void BroadcastMessageAll(string message)
-    {
-        foreach (GameObject go in GameObject.FindObjectsOfType<GameObject>())
-        {
-            go.SendMessage(message, SendMessageOptions.DontRequireReceiver);
-        }
+        Utils.BroadcastMessageAll("OnRoundStart");
     }
 }

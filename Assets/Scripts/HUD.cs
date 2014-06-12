@@ -37,9 +37,7 @@ public class HUD : MonoBehaviour
                 GUILayout.Label("STONE: " + pc.resources.STONE);
                 GUILayout.Label("IRON: " + pc.resources.IRON);
 
-                // Spawn units.
-                //GUILayout
-
+                // End round button.
                 if (GUILayout.Button("End round"))
                 {
                     gc.EndRound();
@@ -51,6 +49,6 @@ public class HUD : MonoBehaviour
         }
         GUILayout.EndArea();
 
-        GUI.DrawTexture(new Rect(Screen.width * 0.85f, Screen.height * 0.85f, Screen.width * 0.95f, Screen.height * 0.95f), minimapTexture);
+        //GUI.DrawTexture(new Rect(Screen.width * 0.85f, Screen.height * 0.85f, Screen.width * 0.95f, Screen.height * 0.95f), minimapTexture);
     }
 }
