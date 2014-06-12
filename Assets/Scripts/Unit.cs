@@ -18,6 +18,11 @@ public class Unit : Colorable
     public GameResources resources = new GameResources();
 
     /// <summary>
+    /// The cost to create one of this unit type.
+    /// </summary>
+    public GameResources cost = new GameResources();
+
+    /// <summary>
     /// How much damage this unit can sustain before dying.
     /// </summary>
     public float health = 100;

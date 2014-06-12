@@ -15,6 +15,11 @@ public class UnitController : MonoBehaviour
     /// </summary>
     private Unit selectedUnit;
 
+    /// <summary>
+    /// A list of unit that can be built.
+    /// </summary>
+    public List<GameObject> buildable = new List<GameObject>();
+
     private List<HoverButton> buttons = null;
 
     /// <summary>
@@ -29,11 +34,13 @@ public class UnitController : MonoBehaviour
 
         if (buttons == null)
         {
-            int h = Screen.height - 120;
             buttons = new List<HoverButton>();
-            buttons.Add(new HoverButton(new Rect(20, h - 330, 100, 100), new GUIContent(PrefabRenderer.RenderedTextures["Soldier"]), GUI.skin.button));
-            buttons.Add(new HoverButton(new Rect(20, h - 220, 100, 100), new GUIContent(PrefabRenderer.RenderedTextures["Miner"]), GUI.skin.button));
-            buttons.Add(new HoverButton(new Rect(20, h - 110, 100, 100), new GUIContent(PrefabRenderer.RenderedTextures["Woodcutter"]), GUI.skin.button));
+            int i = 1;
+            foreach (GameObject prefab in buildable)
+            {
+                buttons.Add(new HoverButton(new Rect(20, Screen.height - 110 * i, 100, 100), new GUIContent(PrefabRenderer.RenderedTextures[prefab]), GUI.skin.button, prefab));
+                i++;
+            }
         }
 
         GUILayout.BeginArea(new Rect(0, 0, Screen.width, Screen.height));
@@ -116,9 +123,26 @@ public class UnitController : MonoBehaviour
         }
     }
 
-    public void onUnitDrop(Rect pos)
+    public void onUnitDrop(GameObject prefab)
     {
-       
+        RaycastHit hit;
+        Ray ray = Camera.main.ScreenPointToRay(Input.mousePosition);
+        if (Physics.Raycast(ray, out hit))
+        {
+            Tile t = hit.transform.gameObject.GetComponent<Tile>();
+            if (t == null || t.Occupant != null)
+            {
+                return;
+            }
+            PlayerController pc = GameObject.FindGameObjectWithTag("Player").GetComponent<PlayerController>();
+            GameResources pr = pc.resources;
+            GameResources uc = prefab.GetComponent<Unit>().cost;
+            if (pr.IRON >= uc.IRON && pr.WOOD >= uc.WOOD && pr.STONE >= uc.STONE)
+            {
+                pc.resources -= uc;
+                GameObject.Instantiate(prefab, t.transform.position, Quaternion.identity);
+            }
+        }
     }
 
     private void ClearSelection()

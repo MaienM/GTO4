@@ -13,7 +13,7 @@ public class PrefabRenderer : MonoBehaviour
     /// <summary>
     /// Dictionary containing the prefab name as key, and rendered texture as value
     /// </summary>
-    public static Dictionary<string, RenderTexture> RenderedTextures = new Dictionary<string, RenderTexture>();
+    public static Dictionary<GameObject, RenderTexture> RenderedTextures = new Dictionary<GameObject, RenderTexture>();
 
     /// <summary>
     /// Whether the rendering process has been completed.
@@ -64,7 +64,7 @@ public class PrefabRenderer : MonoBehaviour
             tex = new RenderTexture(TextureWidth, TextureHeight, TextureDepth, RenderTextureFormat.Default);
             gameObject.camera.targetTexture = tex;
             yield return new WaitForEndOfFrame();
-            RenderedTextures[prefab.name] = tex;
+            RenderedTextures[prefab] = tex;
             gameObject.camera.targetTexture = null;
             Destroy(obj);
         }
