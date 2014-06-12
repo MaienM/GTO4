@@ -76,13 +76,27 @@ public class Unit : Colorable
         }
 
         // Move.
+        StartCoroutine(MovePath(this.tile, tile));
         this.tile = tile;
-        this.transform.position = tile.transform.position;
 
         // End turn.
         EndTurn();
 
         return true;
+    }
+
+    private IEnumerator MovePath(Tile start, Tile end)
+    {
+        List<Tile> path = Tile.Pathfind(start, end, range);
+        path.Remove(start);
+        foreach (Tile t in path)
+        {
+            while ((transform.position - t.transform.position).magnitude > 0.2f)
+            {
+                transform.position = Vector3.MoveTowards(transform.position, t.transform.position, 0.3f);
+                yield return new WaitForFixedUpdate();
+            }
+        }
     }
 
     /// <summary>
