@@ -8,7 +8,7 @@ public class HoverButton
     private Vector3 offset;
     private GUIContent content;
     private GUIStyle style;
-    private Object value;
+    public Object value;
 
     private Rect currentRect
     {
@@ -18,23 +18,20 @@ public class HoverButton
         }
     }
 
-    public HoverButton(Rect position, GUIContent content, GUIStyle style, Object value)
+    public HoverButton(GUIContent content, GUIStyle style, Object value)
     {
-        this.startRect = position;
         this.content = content;
         this.style = style;
         this.value = value;
     }
 
-    public void OnGUI()
+    public EventType OnGUI()
     {
-        switch (DrawHoverButton(currentRect, content, style))
+        startRect = GUILayoutUtility.GetRect(content, style);
+        EventType e = DrawHoverButton(currentRect, content, style);
+        switch (e)
         {
-            case EventType.mouseDown:
-                break;
-
             case EventType.mouseUp:
-                GameObject.FindGameObjectWithTag("GameController").SendMessage("onUnitDrop", value);
                 offset = Vector3.zero;
                 break;
 
@@ -43,6 +40,7 @@ public class HoverButton
                 offset.y = (Screen.height - Input.mousePosition.y) - startRect.y - (startRect.height / 2);
                 break;
         }
+        return e;
     }
 
     private static EventType DrawHoverButton(Rect position, GUIContent content, GUIStyle style)

@@ -40,7 +40,7 @@ public class Colorable : MonoBehaviour
     /// <summary>
     /// The base color.
     /// </summary>
-    private Color baseColor;
+    public Color baseColor;
 
     /// <summary>
     /// The currently applied colors.
@@ -48,11 +48,20 @@ public class Colorable : MonoBehaviour
     private List<ColorData> colors = new List<ColorData>();
 
     /// <summary>
+    /// The material to color.
+    /// </summary>
+    private Material material = null;
+
+    /// <summary>
     /// Store the base color.
     /// </summary>
-    public void Start()
+    public void Awake()
     {
-        baseColor = renderer.material.color;
+        if (renderer != null)
+        {
+            material = renderer.material;
+        }
+        baseColor = material.color;
     }
 
     /// <summary>
@@ -72,7 +81,7 @@ public class Colorable : MonoBehaviour
     /// <param name="colorData">The color to apply</param>
     private void ApplyColor(ColorData colorData)
     {
-        renderer.material.color = baseColor * (1 - colorData.intensity) + colorData.color * colorData.intensity;
+        material.color = baseColor * (1 - colorData.intensity) + colorData.color * colorData.intensity;
     }
 
     /// <summary>
@@ -98,6 +107,6 @@ public class Colorable : MonoBehaviour
     public void ResetColor()
     {
         colors.Clear();
-        renderer.material.color = baseColor;
+        material.color = baseColor;
     }
 }

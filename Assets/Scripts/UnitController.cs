@@ -3,7 +3,7 @@ using System.Linq;
 using System.Collections.Generic;
 using UnityEngine;
 
-public class UnitController : MonoBehaviour 
+public class UnitController : MonoBehaviour  
 {
     /// <summary>
     /// The object with which to mark selected units.
@@ -16,62 +16,16 @@ public class UnitController : MonoBehaviour
     private Unit selectedUnit;
 
     /// <summary>
-    /// A list of unit that can be built.
-    /// </summary>
-    public List<GameObject> buildable = new List<GameObject>();
-
-    private List<HoverButton> buttons = null;
-
-    /// <summary>
-    /// Handles the GUI for adding units.
-    /// </summary>
-    public void OnGUI()
-    {
-        if (!PrefabRenderer.Done)
-        {
-            return;
-        }
-
-        if (buttons == null)
-        {
-            buttons = new List<HoverButton>();
-            int i = 1;
-            foreach (GameObject prefab in buildable)
-            {
-                buttons.Add(new HoverButton(new Rect(20, Screen.height - 110 * i, 100, 100), new GUIContent(PrefabRenderer.RenderedTextures[prefab]), GUI.skin.button, prefab));
-                i++;
-            }
-        }
-
-        GUILayout.BeginArea(new Rect(0, 0, Screen.width, Screen.height));
-        {
-            GUILayout.BeginVertical();
-            {
-                GUILayout.FlexibleSpace();
-                GUILayout.BeginHorizontal();
-                {
-                    GUILayout.FlexibleSpace();
-
-                    foreach (HoverButton hob in buttons)
-                    {
-                        hob.OnGUI();
-                    }
-
-                    GUILayout.FlexibleSpace();
-                }
-                GUILayout.EndHorizontal();
-            }
-            GUILayout.EndVertical();
-        }
-        GUILayout.EndArea();
-    }
-
-    /// <summary>
     /// Handles clicks on tiles, for unit movement/activation.
     /// </summary>
     /// <param name="tile">The clicked tile</param>
     public void OnTileClick(Tile tile)
     {
+        if (Utils.gameController.IsEnded)
+        {
+            return;
+        }
+
         // If we don't have a selection already, check if there is something to select.
         if (selectedUnit == null)
         {
@@ -88,7 +42,7 @@ public class UnitController : MonoBehaviour
                     t.SendMessage("AddColor", new ColorData("range", Color.red, 0.5f, 1));
                     if (t.Occupant)
                     {
-                        t.Occupant.SendMessage("AddColor", new ColorData("range", Tile.Distance(tile, t) == 1 ? Color.green : Color.red, 0.5f, 10));
+                        t.Occupant.SendMessage("AddColor", new ColorData("range", Tile.Distance(tile, t) <= selectedUnit.interactRange ? Color.green : Color.red, 0.5f, 10), SendMessageOptions.DontRequireReceiver);
                     }
                 }
             }
@@ -115,7 +69,7 @@ public class UnitController : MonoBehaviour
             // If there is a unit on the tile, try to interact.
             else
             {
-                if (selectedUnit.InteractWith(tile.Occupant))
+                if (Tile.Distance(tile, selectedUnit.tile) <= selectedUnit.interactRange && selectedUnit.InteractWith(tile.Occupant))
                 {
                     ClearSelection();
                 }
@@ -123,25 +77,42 @@ public class UnitController : MonoBehaviour
         }
     }
 
-    public void onUnitDrop(GameObject prefab)
+    public void onDrop(GameObject prefab)
     {
+        // Find the tile on which we dropped something.
         RaycastHit hit;
         Ray ray = Camera.main.ScreenPointToRay(Input.mousePosition);
         if (Physics.Raycast(ray, out hit))
         {
-            Tile t = hit.transform.gameObject.GetComponent<Tile>();
-            if (t == null || t.Occupant != null)
+            // Get the tile.
+            Tile tile = hit.transform.gameObject.GetComponent<Tile>();
+            if (tile == null || tile.Occupant != null)
             {
                 return;
             }
-            PlayerController pc = GameObject.FindGameObjectWithTag("Player").GetComponent<PlayerController>();
-            GameResources pr = pc.resources;
-            GameResources uc = prefab.GetComponent<Unit>().cost;
-            if (pr.IRON >= uc.IRON && pr.WOOD >= uc.WOOD && pr.STONE >= uc.STONE)
+
+            // Get the unit script of the prefab.
+            Unit prefabUnit = prefab.GetComponent<Unit>();
+
+            // Check whether the player can afford this unit.
+            if (!(Utils.playerController.resources >= prefabUnit.cost))
             {
-                pc.resources -= uc;
-                GameObject.Instantiate(prefab, t.transform.position, Quaternion.identity);
+                return;
             }
+
+            // Check whether the unit can be placed there.
+            if (Tile.Pathfind(Utils.playerController.home.tile, tile, prefabUnit.range) == null)
+            {
+                return;
+            }
+
+            // Place the unit.
+            Utils.playerController.resources -= prefabUnit.cost;
+            GameObject gameobj = PhotonNetwork.Instantiate(prefab.name, Utils.playerController.home.tile.transform.position + prefab.transform.position, prefab.transform.rotation, 0) as GameObject;
+            Unit unit = gameobj.GetComponent<Unit>();
+            unit.player = Utils.playerController;
+            unit.SetOffset(prefab.transform.position);
+            unit.MoveTo(tile, Utils.playerController.home.tile);
         }
     }
 

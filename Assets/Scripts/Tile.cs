@@ -3,7 +3,7 @@ using System.Linq;
 using System.Collections.Generic;
 using UnityEngine;
 
-public class Tile : Colorable 
+public class Tile : Photon.MonoBehaviour  
 {
     /// <summary>
     /// The X position of this tile.
@@ -24,6 +24,17 @@ public class Tile : Colorable
     /// The neighbours of this tile.
     /// </summary>
     public List<Tile> Neighbours = new List<Tile>();
+
+    /// <summary>
+    /// The coordinates -
+    /// </summary>
+    public Vector2 Location
+    {
+        get
+        {
+            return new Vector2(X, Z);
+        }
+    }
 
     /// <summary>
     /// Mouse click event.
@@ -85,7 +96,7 @@ public class Tile : Colorable
             // If this is the target, return.
             if (neighbour == end)
             {
-                path = path = new List<Tile>();
+                path = new List<Tile>();
                 path.Add(end);
                 return path;
             }

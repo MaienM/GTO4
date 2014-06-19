@@ -169,4 +169,34 @@ public class GameResources
         c.WOOD = a.WOOD * b.WOOD;
         return c;
     }
+
+    static public bool operator ==(GameResources a, GameResources b)
+    {
+        return a.IRON == b.IRON && a.STONE == b.STONE && a.WOOD == b.WOOD;
+    }
+
+    static public bool operator !=(GameResources a, GameResources b)
+    {
+        return !(a == b);
+    }
+
+    static public bool operator >(GameResources a, GameResources b)
+    {
+        return a.IRON > b.IRON && a.STONE > b.STONE && a.WOOD > b.WOOD;
+    }
+
+    static public bool operator >=(GameResources a, GameResources b)
+    {
+        return a.IRON >= b.IRON && a.STONE >= b.STONE && a.WOOD >= b.WOOD;
+    }
+
+    static public bool operator <(GameResources a, GameResources b)
+    {
+        return a.IRON < b.IRON && a.STONE < b.STONE && a.WOOD < b.WOOD;
+    }
+
+    static public bool operator <=(GameResources a, GameResources b)
+    {
+        return a.IRON <= b.IRON && a.STONE <= b.STONE && a.WOOD <= b.WOOD;
+    }
 }

@@ -1,11 +1,12 @@
 ﻿using UnityEngine;
 using System.Collections;
 using System.Collections.Generic;
+using MaienM.UnityUtils.CoreEx;
 
 /// <summary>
 /// An object with which can be interacted.
 /// </summary>
-public class Unit : Colorable
+public class Unit : Photon.MonoBehaviour 
 {
     /// <summary>
     /// The player this unit belongs to.
@@ -38,70 +39,131 @@ public class Unit : Colorable
     public int range = 0;
 
     /// <summary>
+    /// The interact range of this unit. 0 means the unit cannot interact.
+    /// </summary>
+    public int interactRange = 0;
+
+    /// <summary>
     /// The tile on which this unit is located.
     /// </summary>
-    public Tile tile
-    {
-        get
-        {
-            return _tile;
-        }
-        set
-        {
-            if (_tile != null)
-            {
-                _tile.Occupant = null;
-            }
-            _tile = value;
-            if (_tile != null)
-            {
-                _tile.Occupant = this;
-            }
-        }
-    }
-    private Tile _tile;
+    public Tile tile;
+
+    /// <summary>
+    /// Offset from tile.
+    /// </summary>
+    public Vector3 offset = Vector3.zero;
 
     /// <summary>
     /// Whether the turn is completed.
     /// </summary>
     public bool turnDone = false;
     
+    public void OnGUI()
+    {
+        GUIContent content = new GUIContent(health.ToString());
+        GUIStyle style = GUI.skin.label;
+        Vector2 screenPos = Camera.main.WorldToScreenPoint(transform.position);
+        screenPos = new Vector2(screenPos.x, Screen.height - screenPos.y);
+        GUI.Label(style.CalcSize(content).ToRectSize().Position(screenPos.ToRectPos(), Location.BOTTOM, 0.5f, 0), content);
+    }
+
+    public void SetOffset(Vector3 offset)
+    {
+        photonView.RPC("_SetOffset", PhotonTargets.AllBuffered, offset);
+    }
+
+    [RPC]
+    public void _SetOffset(Vector3 offset)
+    {
+        this.offset = offset;
+    }
+
+    public void SetTile(Tile tile)
+    {
+        photonView.RPC("SetTile", PhotonTargets.AllBuffered, tile.Location);
+    }
+
+    [RPC]
+    public void SetTile(Vector2 location)
+    {
+        // Get the tile.
+        Tile tile = Utils.levelBuilder.GetTile(location);
+
+        // Update occupant.
+        if (this.tile != null)
+        {
+            this.tile.Occupant = null;
+        }
+        if (tile != null)
+        {
+            tile.Occupant = this;
+        }
+
+        // Update tile.
+        this.tile = tile;
+    }
+    
     /// <summary>
     /// Move to the given tile
     /// </summary>
     /// <param name="tile">The tile to move to</param>
     /// <returns>Whether the move succeeded</returns>
-    public bool MoveTo(Tile tile)
+    public bool MoveTo(Tile tile, Tile from = null)
     {
+        Vector2 position = tile.Location;
+        Vector2 fromPosition = (from != null) ? from.Location : this.tile.Location;
+        photonView.RPC("MoveTo", PhotonTargets.Others, position, fromPosition);
+        return MoveTo(position, fromPosition);
+    }
+
+    [RPC]
+    public bool MoveTo(Vector2 position, Vector2 fromPosition)
+    {
+        Tile tile = Utils.levelBuilder.GetTile(position);
+        Tile from = Utils.levelBuilder.GetTile(fromPosition);
+
         // Check whether the tile is in range.
-        List<Tile> path = Tile.Pathfind(this.tile, tile, range);
+        List<Tile> path = Tile.Pathfind(from, tile, range);
         if (path == null)
         {
             return false;
         }
 
         // Move.
-        StartCoroutine(MovePath(this.tile, tile));
-        this.tile = tile;
-
-        // End turn.
-        EndTurn();
+        StartCoroutine(MovePath(from, tile));
+        this.SetTile(tile);
 
         return true;
     }
 
     private IEnumerator MovePath(Tile start, Tile end)
     {
+        // Get the path.
         List<Tile> path = Tile.Pathfind(start, end, range);
         path.Remove(start);
+
+        // Start the movement animation.
+        Utils.DoAnimator(gameObject, "Moving", true);
         foreach (Tile t in path)
         {
-            while ((transform.position - t.transform.position).magnitude > 0.2f)
+            Vector3 endPoint = t.transform.position + offset;
+
+            // Look to the endpoint.
+            transform.LookAt(endPoint);
+            
+            // Move to the endpoint.
+            while ((transform.position - endPoint).magnitude > 0)
             {
-                transform.position = Vector3.MoveTowards(transform.position, t.transform.position, 0.3f);
+                transform.position = Vector3.MoveTowards(transform.position, endPoint, 0.1f);
                 yield return new WaitForFixedUpdate();
             }
         }
+
+        // Finish the movement animation.
+        Utils.DoAnimator(gameObject, "Moving", false);
+
+        // End turn.
+        OnRoundEnd();
     }
 
     /// <summary>
@@ -112,50 +174,91 @@ public class Unit : Colorable
     public bool InteractWith(Unit unit)
     {
         // Prevent friendly fire.
-        if (player == unit.player)
+        if (unit.player == this.player)
         {
             return false;
         }
 
-        // Gather resources.
-        player.resources += unit.resources * resources;
+        photonView.RPC("InteractWith", PhotonTargets.Others, unit.tile.Location);
+        InteractWith(unit.tile.Location);
+
+        return true;
+    }
+
+    [RPC]
+    public void InteractWith(Vector2 position)
+    {
+        Unit unit = Utils.levelBuilder.GetTile(position).Occupant;
+        StartCoroutine(_InteractWith(unit));
+    }
+
+    private IEnumerator _InteractWith(Unit unit)
+    {
+        // Look at target.
+        transform.LookAt(unit.tile.transform.position + offset);
+
+        // Display animation.
+        Utils.DoAnimator(gameObject, "Attack");
+        yield return StartCoroutine(Utils.DoAnimatorWait(gameObject));
+        Utils.DoAnimator(unit.gameObject, "Hit");
 
         // Damage units.
         unit.health -= damage;
         if (unit.health <= 0)
         {
-            unit.Die();
+            StartCoroutine(unit.Die());
+        }
+
+        // Gather resources.
+        if (player != null && unit != null)
+        {
+            player.resources += unit.resources * resources;
         }
 
         // End turn.
-        EndTurn();
-
-        return true;
+        OnRoundEnd();
     }
 
     /// <summary>
     /// End the turn for this unit.
     /// </summary>
-    private void EndTurn()
+    public void OnRoundEnd()
     {
+        if (range == 0)
+        {
+            return;
+        }
         turnDone = true;
-        SendMessage("AddColor", new ColorData("disable", Color.white, 0.6f, 10));
+        SendMessage("AddColor", new ColorData("disable", Color.black, 0.6f, 10), SendMessageOptions.DontRequireReceiver);
     }
 
     /// <summary>
     /// A new round started.
-    /// </summary>
+    /// </summary>s
     public void OnRoundStart()
     {
         turnDone = false;
-        SendMessage("RemoveColor", "disable");
+        SendMessage("RemoveColor", "disable", SendMessageOptions.DontRequireReceiver);
     }
 
     /// <summary>
     /// Called when the unit dies. This is responsible for destroying the object.
     /// </summary>
-    public void Die()
+    public IEnumerator Die()
     {
-        Destroy(gameObject);
+        yield return StartCoroutine(Utils.DoAnimatorWait(gameObject));
+        Utils.DoAnimator(gameObject, "Die");
+        yield return new WaitForSeconds(1);
+        Destroy();
+        SendMessage("OnDie", SendMessageOptions.DontRequireReceiver);
+    }
+
+    [RPC]
+    public void Destroy()
+    {
+        if (photonView.isMine)
+        {
+            PhotonNetwork.Destroy(gameObject);
+        }
     }
 }

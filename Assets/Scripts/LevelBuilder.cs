@@ -2,7 +2,7 @@
 using System.Collections;
 using System.Collections.Generic;
 
-public class LevelBuilder : MonoBehaviour 
+public class LevelBuilder : Photon.MonoBehaviour  
 {
     /// <summary>
     /// The size of the level. 
@@ -24,7 +24,26 @@ public class LevelBuilder : MonoBehaviour
     /// </summary>
     public GameObject[] prefabs;
 
-	public void Start() 
+    public void Awake()
+    {
+        ConsoleCommandsRepository ccr = ConsoleCommandsRepository.Instance;
+        ccr.RegisterCommand("dumpLevel", PrintBoard);
+    }
+
+    public void PrintBoard(params string[] args)
+    {
+        for (int y = 0; y < grid.GetLength(1); y++)
+        {
+            string line = "";
+            for (int x = 0; x < grid.GetLength(0); x++)
+            {
+                line += grid[x, y].Occupant == null ? "[ ]" : "[x]";
+            }
+            Debug.Log(line);
+        }
+    }
+
+    public void OnJoinedRoom()
 	{
         // Create vectors to take one step in either direction.
         Vector3 step = floorPrefab.transform.localScale * 10;
@@ -39,7 +58,7 @@ public class LevelBuilder : MonoBehaviour
         {
             for (int z = 0; z < size; z++)
             {
-                Vector3 position = x * stepX + z * stepZ;
+                Vector3 position = x * stepX + z * stepZ - (size - 1) * 0.5f * step;
                 GameObject go = Instantiate(floorPrefab, position, Quaternion.identity) as GameObject;
                 go.transform.parent = gameObject.transform;
                 Tile tile = go.GetComponent<Tile>();
@@ -67,17 +86,27 @@ public class LevelBuilder : MonoBehaviour
         }
 
         // Spawn extras.
-        foreach (GameObject prefab in prefabs)
+        if (PhotonNetwork.isMasterClient)
         {
-            GameObject go = (GameObject)Instantiate(prefab);
-            int x, z;
-            do
+            foreach (GameObject prefab in prefabs)
             {
-                x = Random.Range(0, size);
-                z = Random.Range(0, size);
-            } while (grid[x, z].Occupant != null);
-            go.GetComponent<Unit>().tile = grid[x, z];
-            go.transform.position = grid[x, z].gameObject.transform.position;
+                int x, z;
+                do
+                {
+                    x = Random.Range(0, size);
+                    z = Random.Range(0, size);
+                } while (grid[x, z].Occupant != null);
+                Tile tile = grid[x, z];
+                GameObject go = PhotonNetwork.Instantiate(prefab.name, tile.gameObject.transform.position, prefab.transform.rotation, 0) as GameObject;
+                go.GetComponent<Unit>().SetTile(tile);
+            }
         }
+
+        Utils.BroadcastMessageAll("LevelBuilt", this);
 	}
+
+    public Tile GetTile(Vector2 position)
+    {
+        return grid[(int)position.x, (int)position.y];
+    }
 }

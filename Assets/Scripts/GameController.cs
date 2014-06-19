@@ -1,24 +1,51 @@
-﻿using UnityEngine;
+﻿using ExitGames.Client.Photon;
+using UnityEngine;
 
-public class GameController : MonoBehaviour 
+public class GameController : Photon.MonoBehaviour 
 {
+    public bool IsCurrent = false;
+    public bool IsEnded = false;
+    public bool IsWinner = false;
+
     public void Start()
     {
-        ConsoleCommandsRepository ccr = ConsoleCommandsRepository.Instance;
-        ccr.RegisterCommand("endRound", EndRound);
+        // Setup the photon connection.
+        PhotonNetwork.ConnectUsingSettings("1");
+    }
+
+    public void OnJoinedLobby()
+    {
+        RoomOptions ro = new RoomOptions();
+        ro.maxPlayers = 2;
+        PhotonNetwork.JoinOrCreateRoom("main", ro, TypedLobby.Default);
+    }
+
+    public void OnJoinedRoom()
+    {
+        IsCurrent = PhotonNetwork.isMasterClient;
     }
 
     /// <summary>
     /// End the current round.
     /// </summary>
-    public void EndRound(params string[] args)
+    public void EndRound()
     {
+        IsCurrent = false;
         Utils.BroadcastMessageAll("OnRoundEnd");
-        StartRound();
+        if (PhotonNetwork.otherPlayers.Length > 0)
+        {
+            photonView.RPC("StartRound", PhotonNetwork.otherPlayers[0]);
+        }
+        else
+        {
+            StartRound();
+        }
     }
 
+    [RPC]
     public void StartRound()
     {
-        Utils.BroadcastMessageAll("OnRoundStart");
+        IsCurrent = true;
+        Utils.BroadcastMessageMine("OnRoundStart");
     }
 }
